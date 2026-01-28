@@ -4,7 +4,7 @@
 This project focuses on recognizing **Amharic alphabetical family characters (ሀ to በ)** using deep learning techniques.  
 The goal is to build an end-to-end deep learning system starting from **custom data collection** to **model design, training, and evaluation**.
 
-The system processes scanned handwritten worksheets containing a 10×7 grid of characters, automatically extracts individual character images, applies data augmentation, and trains a Convolutional Neural Network (CNN) to classify characters into 10 alphabet families. The trained model achieves **89% accuracy** on truly unseen test sheets, demonstrating strong generalization to new handwriting samples.
+The system processes scanned handwritten worksheets containing a 10×7 grid of characters, automatically extracts individual character images, applies data augmentation, and trains a Convolutional Neural Network (CNN) to classify characters into 10 alphabet families. The trained model achieves **92% accuracy** on truly unseen test sheets, demonstrating strong generalization to new handwriting samples.
 
 ---
 
@@ -44,12 +44,12 @@ The project focuses on the following **10 Amharic alphabet family characters**:
 **Dataset Statistics:**
 - Original scanned sheets: **80 JPG files**
 - **72 unique sheets** successfully processed (some skipped due to calibration issues)
-- Extracted character images (after augmentation): **22,566 PNG images**
+- Extracted character images (after augmentation): **22,402 PNG images**
 
 **Proper Dataset Split (by sheet ID to prevent data leakage):**
-- **Training set**: 51 sheets → **15,971 images** (70.8%)
-- **Validation set**: 10 sheets → **2,710 images** (12.0%)
-- **Test set**: 12 sheets → **3,885 images** (17.2%)
+- **Training set**: 51 sheets → **15,807 images** (70.6%)
+- **Validation set**: 10 sheets → **2,710 images** (12.1%)
+- **Test set**: 12 sheets → **3,885 images** (17.3%)
 
 **Key Feature**: Dataset is split by **sheet ID**, ensuring all augmented versions of characters from the same sheet stay together in one split. This prevents data leakage and provides realistic evaluation of model generalization.
 
@@ -141,30 +141,30 @@ The model is trained to classify input images into one of the 10 Amharic alphabe
 ## 📈 Evaluation Metrics
 
 ### Overall Performance
-- **Test Accuracy**: **89%** on truly unseen sheets
-- **Training Accuracy**: 98% (7 epochs with early stopping)
-- **Validation Accuracy**: 89-90%
+- **Test Accuracy**: **92%** on truly unseen sheets
+- **Training Accuracy**: 98.06% (9 epochs with early stopping)
+- **Validation Accuracy**: 90.96% (best at epoch 6)
 - **Training Strategy**: Early stopping with patience=5 to prevent overfitting
 
 ### Per-Class Performance (Precision/Recall/F1-Score)
 
-**Excellent Performers (>95% precision):**
-- **re** (ረ): Precision 97%, Recall 95%, F1 96% - Best performer
-- **qe** (ቀ): Precision 96%, Recall 86%, F1 91% - Very strong
-- **sha** (ሸ): Precision 97%, Recall 86%, F1 91% - Highly accurate
+**Excellent Performers (≥97% precision):**
+- **qe** (ቀ): Precision 99%, Recall 89%, F1 94% - Highest precision
+- **re** (ረ): Precision 97%, Recall 97%, F1 97% - Best balanced performer
+- **be** (በ): Precision 97%, Recall 97%, F1 97% - Excellent all-round
+- **sha** (ሸ): Precision 97%, Recall 93%, F1 95% - Very strong
 
-**Strong Performers (90-94%):**
-- **be** (በ): Precision 94%, Recall 94%, F1 94% - Well balanced
-- **ha** (ሀ): Precision 94%, Recall 91%, F1 93% - Consistent
-- **se** (ሠ): Precision 90%, Recall 96%, F1 93% - Good recall
+**Strong Performers (90-96%):**
+- **ha** (ሀ): Precision 96%, Recall 95%, F1 96% - Highly consistent
+- **hha** (ሐ): Precision 90%, Recall 92%, F1 91% - Well balanced
 
-**Good Performers (81-89%):**
-- **hha** (ሐ): Precision 84%, Recall 95%, F1 89%
-- **me** (መ): Precision 81%, Recall 91%, F1 86%
+**Good Performers (85-89%):**
+- **se** (ሠ): Precision 88%, Recall 95%, F1 91% - Good recall
+- **me** (መ): Precision 87%, Recall 91%, F1 89% - Solid performance
+- **le** (ለ): Precision 85%, Recall 86%, F1 85% - Consistent
 
-**Challenging Classes (75-81%):**
-- **le** (ለ): Precision 77%, Recall 81%, F1 79% - Most confused class
-- **sa** (ሰ): Precision 79%, Recall 75%, F1 77% - Second most confused
+**Most Challenging Class (83%):**
+- **sa** (ሰ): Precision 83%, Recall 83%, F1 83% - Requires improvement
 
 ### Visualization
 - **Loss Curves**: Training and validation loss over epochs
