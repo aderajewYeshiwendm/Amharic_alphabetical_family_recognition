@@ -4,7 +4,7 @@
 This project focuses on recognizing **Amharic alphabetical family characters (ሀ to በ)** using deep learning techniques.  
 The goal is to build an end-to-end deep learning system starting from **custom data collection** to **model design, training, and evaluation**.
 
-The system processes scanned handwritten worksheets containing a 10×7 grid of characters, automatically extracts individual character images, applies data augmentation, and trains a Convolutional Neural Network (CNN) to classify characters into 10 alphabet families. The trained model achieves **~98% accuracy** on the test set.
+The system processes scanned handwritten worksheets containing a 10×7 grid of characters, automatically extracts individual character images, applies data augmentation, and trains a Convolutional Neural Network (CNN) to classify characters into 10 alphabet families. The trained model achieves **89% accuracy** on truly unseen test sheets, demonstrating strong generalization to new handwriting samples.
 
 ---
 
@@ -42,11 +42,16 @@ The project focuses on the following **10 Amharic alphabet family characters**:
 - No open-source or publicly available datasets were used
 
 **Dataset Statistics:**
-- Original scanned sheets: **80 images**
-- Extracted character images (after augmentation): **~22,500 images**
-- Training set: **~15,800 images** (70%)
-- Validation set: **~3,300 images** (15%)
-- Test set: **~3,400 images** (15%)
+- Original scanned sheets: **80 JPG files**
+- **72 unique sheets** successfully processed (some skipped due to calibration issues)
+- Extracted character images (after augmentation): **22,566 PNG images**
+
+**Proper Dataset Split (by sheet ID to prevent data leakage):**
+- **Training set**: 51 sheets → **15,971 images** (70.8%)
+- **Validation set**: 10 sheets → **2,710 images** (12.0%)
+- **Test set**: 12 sheets → **3,885 images** (17.2%)
+
+**Key Feature**: Dataset is split by **sheet ID**, ensuring all augmented versions of characters from the same sheet stay together in one split. This prevents data leakage and provides realistic evaluation of model generalization.
 
 ---
 
@@ -72,9 +77,25 @@ Each extracted character generates **6 variations**:
 - **Bold**: Morphological dilation (thickening)
 - **Thin**: Morphological erosion (thinning) or fallback rotation
 
-### Dataset Splitting (`split_dataset.py`)
-- Random split at the image level (70% train, 15% validation, 15% test)
-- Images organized by family folders: `dataset/train/`, `dataset/val/`, `dataset/test/`
+### Dataset Splitting (`split_dataset_by_sheet.py`)
+**Proper Split Method** (prevents data leakage):
+- Splits by **sheet ID**, not individual images
+- All augmented versions of characters from the same sheet stay together
+- Ensures model is evaluated on truly unseen handwriting samples
+
+**Split Ratios:**
+- Training: 70% of sheets (51 sheets)
+- Validation: 15% of sheets (10 sheets)
+- Test: 15% of sheets (12 sheets)
+
+**Why this matters:**
+- Original `split_dataset.py` split randomly at image level (causing data leakage)
+- Augmented versions of same character could appear in both train and test
+- This inflated accuracy from 89% to 98%
+- New method provides **honest evaluation** of generalization
+
+**Directory Structure:**
+- Images organized in `dataset_sheet_split/train/`, `val/`, `test/`
 - Each split contains subfolders for the 10 alphabet families
 
 ---
@@ -118,11 +139,38 @@ The model is trained to classify input images into one of the 10 Amharic alphabe
 ---
 
 ## 📈 Evaluation Metrics
-- **Accuracy**: ~98% on test set
-- **Loss**: Training and validation loss curves
-- **Confusion Matrix**: Per-class classification performance
-- **Classification Report**: Precision, recall, and F1-score per class
-- **Training vs Validation curves**: Monitor overfitting
+
+### Overall Performance
+- **Test Accuracy**: **89%** on truly unseen sheets
+- **Training Accuracy**: 98% (7 epochs with early stopping)
+- **Validation Accuracy**: 89-90%
+- **Training Strategy**: Early stopping with patience=5 to prevent overfitting
+
+### Per-Class Performance (Precision/Recall/F1-Score)
+
+**Excellent Performers (>95% precision):**
+- **re** (ረ): Precision 97%, Recall 95%, F1 96% - Best performer
+- **qe** (ቀ): Precision 96%, Recall 86%, F1 91% - Very strong
+- **sha** (ሸ): Precision 97%, Recall 86%, F1 91% - Highly accurate
+
+**Strong Performers (90-94%):**
+- **be** (በ): Precision 94%, Recall 94%, F1 94% - Well balanced
+- **ha** (ሀ): Precision 94%, Recall 91%, F1 93% - Consistent
+- **se** (ሠ): Precision 90%, Recall 96%, F1 93% - Good recall
+
+**Good Performers (81-89%):**
+- **hha** (ሐ): Precision 84%, Recall 95%, F1 89%
+- **me** (መ): Precision 81%, Recall 91%, F1 86%
+
+**Challenging Classes (75-81%):**
+- **le** (ለ): Precision 77%, Recall 81%, F1 79% - Most confused class
+- **sa** (ሰ): Precision 79%, Recall 75%, F1 77% - Second most confused
+
+### Visualization
+- **Loss Curves**: Training and validation loss over epochs
+- **Accuracy Curves**: Training and validation accuracy progression
+- **Confusion Matrix**: Detailed per-class confusion analysis
+- **Classification Report**: Comprehensive precision, recall, F1 metrics
 
 ---
 
@@ -138,25 +186,26 @@ Amharic_alphabetical_family_recognition/
 |   +-- dataset80.jpg
 |   +-- calibration.txt
 |
-+-- dataset/                 # Processed character images (~22,500 PNG files)
-|   +-- train/              # Training set (~15,800 images)
-|   |   +-- ha/
-|   |   +-- le/
-|   |   +-- hha/
-|   |   +-- ... (10 family folders)
-|   +-- val/                # Validation set (~3,300 images)
-|   |   +-- ha/
-|   |   +-- ... (10 family folders)
-|   +-- test/               # Test set (~3,400 images)
-|       +-- ha/
-|       +-- ... (10 family folders)
++-- dataset/                 # Initial extracted images (22,566 PNG files)
+|   +-- train/, val/, test/ # Original split (has data leakage - not recommended)
 |
-+-- grid_cell_extractor.ipynb    # Data extraction and augmentation notebook
-+-- family_recognition_model.ipynb # Model training and evaluation notebook
-+-- split_dataset.py              # Utility script for dataset splitting
-+-- best_model.pth                # Trained model weights (saved checkpoint)
-+-- requirements.txt              # Python dependencies
-+-- README.md                     # Project documentation
++-- dataset_sheet_split/
+|   +-- train/              # Training set: 51 sheets (15,971 images)
+|   |   +-- ha/, le/, hha/, me/, se/, re/, sa/, sha/, qe/, be/
+|   +-- val/                # Validation set: 10 sheets (2,710 images)
+|   |   +-- ha/, le/, hha/, me/, se/, re/, sa/, sha/, qe/, be/
+|   +-- test/               # Test set: 12 sheets (3,885 images)
+|       +-- ha/, le/, hha/, me/, se/, re/, sa/, sha/, qe/, be/
+|
++-- grid_cell_extractor.ipynb         # Data extraction and augmentation notebook
++-- family_recognition_model.ipynb    # Model training and evaluation notebook
++-- split_dataset.py                  # OLD: Image-level split (causes data leakage)
++-- split_dataset_by_sheet.py         # ✅ NEW: Proper sheet-level split
++-- best_model.pth                    # Trained model weights (saved checkpoint)
++-- requirements.txt                  # Python dependencies
++-- README.md                         # Project documentation
++-- PROJECT_ANALYSIS.md               # Detailed project analysis and improvements
++-- CRITICAL_FIX_1_DATA_LEAKAGE.md    # Documentation of data leakage fix
 ```
 
 ---
@@ -193,16 +242,34 @@ Amharic_alphabetical_family_recognition/
    - Apply 6 augmentations per character
    - Save images to `dataset/` organized by family folders
 
-#### Step 2: Split Dataset (Optional)
-If you need to reorganize the dataset into train/val/test splits:
+#### Step 2: Split Dataset by Sheet ID (REQUIRED for proper evaluation)
+**Important**: This step prevents data leakage and ensures realistic accuracy evaluation.
+
 ```bash
-python split_dataset.py
+python3 split_dataset_by_sheet.py
 ```
-This will create `dataset_split/` with train, val, and test folders.
+
+This script will:
+- Merge images from the initial `dataset/` folder
+- Group images by their sheet ID (extracted from filename)
+- Split sheets (not individual images) into train/val/test
+- Create `dataset_sheet_split/` with properly separated data
+- Display detailed statistics about the split
+
+**Output:**
+```
+✓ Found 73 unique sheets
+✓ Train: 51 sheets (15,971 images)
+✓ Val: 10 sheets (2,710 images)
+✓ Test: 12 sheets (3,885 images)
+```
 
 #### Step 3: Train the Model
 1. Open `family_recognition_model.ipynb` in Jupyter
-2. Ensure `dataset/` contains `train/`, `val/`, and `test/` folders
+2. **Update the data directory** (line 52):
+   ```python
+   data_dir = 'dataset_sheet_split/'  # Use the properly split dataset
+   ```
 3. Run all cells to:
    - Load and preprocess the dataset
    - Define and initialize the CNN model
@@ -210,15 +277,13 @@ This will create `dataset_split/` with train, val, and test folders.
    - Evaluate on test set and generate metrics
    - Save the best model to `best_model.pth`
 
+**Expected Results:**
+- Training accuracy: ~98%
+- Validation accuracy: ~89-90%
+- Test accuracy: ~89% (realistic, on unseen sheets)
+
 #### Step 4: Make Predictions
 Use the `predict_image()` function in the model notebook to classify new character images:
 ```python
 predict_image(model, 'path/to/character/image.png')
 ```
-
----
-
-## 📝 Notes
-- The current dataset split is done at the **image level**, meaning augmented versions of the same original character may appear in both training and test sets.
-- The model achieves high accuracy (~98%) due to the constrained problem (clean, centered characters from structured grids) and data augmentation strategy.
-- Manual calibration is required for each scanned sheet to correct perspective distortion.
