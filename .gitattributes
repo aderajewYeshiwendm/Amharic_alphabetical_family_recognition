@@ -1,0 +1,11 @@
+# Track PNG images with Git LFS
+*.png filter=lfs diff=lfs merge=lfs -text
+
+# Track JPG images with Git LFS (for scanned sheets)
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+
+# Track model files with Git LFS
+*.pth filter=lfs diff=lfs merge=lfs -text
+*.pt filter=lfs diff=lfs merge=lfs -text
+*.ckpt filter=lfs diff=lfs merge=lfs -text
